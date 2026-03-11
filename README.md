@@ -1,2 +1,298 @@
-# sip
-Academic project implementing a SIP User Agent and Proxy server with REGISTER and INVITE support and a simplified location service.
+# SIP Protocol Implementation in Java
+
+Implementation of the **Session Initiation Protocol (SIP)** based on **RFC 3261**, including a **User Agent**, a **Stateful Proxy**, and a **SIP Servlet container**.
+
+The project simulates SIP signaling for **user registration, call establishment, and call termination** within a SIP domain.
+
+---
+
+# Project Structure
+
+```
+sip-project/
+├── src/
+│   ├── common/
+│   │   ├── FindMyIPv4.java
+│   │   ├── Logger.java
+│   │   ├── RegisteredUser.java
+│   │   ├── Constants.java
+│   │   └── TransactionKey.java
+│   │
+│   ├── sipMessages/
+│   │   ├── SIPMessage.java
+│   │   ├── InviteMessage.java
+│   │   ├── ACKMessage.java
+│   │   ├── ByeMessage.java
+│   │   ├── RegisterMessage.java
+│   │   ├── OKMessage.java
+│   │   ├── TryingMessage.java
+│   │   ├── RingingMessage.java
+│   │   ├── NotFoundMessage.java
+│   │   ├── BusyHereMessage.java
+│   │   ├── RequestTimeoutMessage.java
+│   │   ├── ServiceUnavailableMessage.java
+│   │   ├── ProxyAuthenticationMessage.java
+│   │   ├── UnauthorizedMessage.java
+│   │   ├── SDPMessage.java
+│   │   └── SIPException.java
+│   │
+│   ├── ua/
+│   │   ├── UA.java
+│   │   ├── UaUserLayer.java
+│   │   ├── UaTransactionLayer.java
+│   │   └── UaTransportLayer.java
+│   │
+│   ├── proxy/
+│   │   ├── Proxy.java
+│   │   ├── ProxyUserLayer.java
+│   │   ├── ProxyTransactionLayer.java
+│   │   ├── ProxyTransportLayer.java
+│   │   └── transaction/
+│   │
+│   ├── transactions/
+│   │   ├── UaInviteClientTransaction.java
+│   │   ├── UaInviteServerTransaction.java
+│   │   ├── UaNonInviteClientTransaction.java
+│   │   ├── UaNonInviteServerTransaction.java
+│   │   ├── ProxyInviteClientTransaction.java
+│   │   ├── ProxyInviteServerTransaction.java
+│   │   ├── ProxyNonInviteClientTransaction.java
+│   │   └── ProxyNonInviteServerTransaction.java
+│   │
+│   └── sipServlet/
+│       ├── SipServletInterface.java
+│       ├── SipServletRequestInterface.java
+│       ├── SipServletResponseInterface.java
+│       ├── ProxyInterface.java
+│       ├── SipServletRequest.java
+│       ├── SipServletResponse.java
+│       ├── ProxyImpl.java
+│       ├── ServletContainer.java
+│       └── users.xml
+│
+├── build.sh
+└── README.md
+```
+
+---
+
+# Building the Project
+
+Make the build script executable:
+
+```bash
+chmod +x build.sh
+```
+
+Compile the project:
+
+```bash
+./build.sh
+```
+
+Clean the build:
+
+```bash
+./build.sh clean
+```
+
+---
+
+# Running the System
+
+## Start the Proxy Server
+
+```
+java -cp bin proxy.Proxy <port> <looseRouting> <debug>
+```
+
+Example:
+
+```
+java -cp bin proxy.Proxy 5080 true true
+```
+
+Parameters:
+
+| Parameter | Description |
+|-----------|-------------|
+| port | Port where the proxy listens |
+| looseRouting | Enable loose routing |
+| debug | Enable debug logs |
+
+---
+
+## Start a User Agent
+
+```
+java -cp bin ua.UA <sipUri> <localPort> <proxyAddress> <proxyPort> <debug> <registrationExpires>
+```
+
+Example (Alice):
+
+```
+java -cp bin ua.UA sip:alice@domain.com 5060 127.0.0.1 5080 true 3600
+```
+
+Example (Bob):
+
+```
+java -cp bin ua.UA sip:bob@domain.com 5061 127.0.0.1 5080 true 3600
+```
+
+Parameters:
+
+| Parameter | Description |
+|-----------|-------------|
+| sipUri | SIP URI of the user |
+| localPort | Local listening port |
+| proxyAddress | Proxy IP |
+| proxyPort | Proxy port |
+| debug | Enable debug logs |
+| registrationExpires | Registration expiration time (seconds) |
+
+---
+
+# User Agent Commands
+
+| Command | Description |
+|--------|-------------|
+| call `<username>` | Initiate a call |
+| accept | Accept an incoming call |
+| reject | Reject an incoming call |
+| hangup | End the current call |
+| status | Show current status |
+| exit | Exit the application |
+
+---
+
+# Proxy Commands
+
+| Command | Description |
+|--------|-------------|
+| status | Show proxy status |
+| users | List registered users |
+| exit | Stop the proxy |
+
+---
+
+# Key Features
+
+## User Agent
+
+- Implements SIP **INVITE and non-INVITE transaction state machines**
+- Automatic **REGISTER and re-registration**
+- Retransmission of lost messages
+- Call management and signaling
+- Call states: `IDLE`, `CALLING`, `RINGING`, `ESTABLISHED`, `TERMINATING`
+
+---
+
+## Proxy
+
+- **Stateful SIP proxy**
+- User registration (location service)
+- Support for **loose routing**
+- Concurrent transaction processing
+- Forwards retransmissions generated by user agents
+
+---
+
+## SIP Servlet Container
+
+- XML-based configuration
+- User-specific call control
+- Time-based restrictions
+- Call redirection
+- Blocked caller lists
+
+---
+
+# Transaction State Machines
+
+### INVITE Client Transaction
+
+```
+IDLE → CALLING → PROCEEDING → COMPLETED → TERMINATED
+                           ↘ TERMINATED (200 OK)
+```
+
+### INVITE Server Transaction
+
+```
+IDLE → PROCEEDING → COMPLETED → TERMINATED
+                 ↘ TERMINATED (200 OK)
+```
+
+### Non-INVITE Client Transaction
+
+```
+IDLE → TRYING → PROCEEDING → COMPLETED → TERMINATED
+```
+
+### Non-INVITE Server Transaction
+
+```
+IDLE → TRYING → PROCEEDING → COMPLETED → TERMINATED
+```
+
+---
+
+# Timer Values
+
+| Timer | Value | Description |
+|------|------|-------------|
+| TIMER_T1 | 500 ms | Base retransmission interval |
+| TIMER_B | 32 s | INVITE timeout |
+| TIMER_F | 32 s | Non-INVITE timeout |
+| RINGING_TIMEOUT | 10 s | User answer timeout |
+| COMPLETED_TIMER | 1 s | Completed state duration |
+| ERROR_RETRANSMIT_TIMER | 200 ms | Error retransmission |
+| REGISTER_RETRY_TIMER | 2 s | REGISTER retry interval |
+
+---
+
+# Example Session
+
+Start the Proxy:
+
+```
+java -cp bin proxy.Proxy 5060 true true
+```
+
+Start Alice:
+
+```
+java -cp bin ua.UA sip:alice@sma 9000 127.0.0.1 5060 true 3600
+```
+
+Start Bob:
+
+```
+java -cp bin ua.UA sip:bob@sma 9100 127.0.0.1 5060 true 3600
+```
+
+Alice calls Bob:
+
+```
+call Bob
+```
+
+Bob accepts the call:
+
+```
+accept
+```
+
+Alice ends the call:
+
+```
+hangup
+```
+
+---
+
+# Authors
+
+- [Emilio José Manchado](https://emilioj16.github.io/github.io/)
+- [José Alfonso Díaz ](https://www.linkedin.com/in/jose-alfonso-d%C3%ADaz-m%C3%A9ndez-41b173276/)
