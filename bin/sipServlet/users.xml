@@ -1,0 +1,5 @@
+<users>
+    <user id="sip:bob@SMA">
+        <Servlet-class name="sipServlet.CallRestrictionServlet" />
+    </user>
+</users>
