@@ -272,24 +272,6 @@ Start Bob:
 java -cp bin ua.UA sip:bob@sma 9100 127.0.0.1 5060 true 3600
 ```
 
-Alice calls Bob:
-
-```
-call Bob
-```
-
-Bob accepts the call:
-
-```
-accept
-```
-
-Alice ends the call:
-
-```
-hangup
-```
-
 ---
 
 # Authors
